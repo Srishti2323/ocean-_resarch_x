@@ -1,0 +1,284 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>OCEAN RESEARCH X</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#03111e;color:#d9f7ff;
+ font-family:Arial,sans-serif;overflow:hidden
+}
+header{
+ height:58px;padding:10px 14px;
+ display:flex;justify-content:space-between;align-items:center;
+ background:#071c2c;border-bottom:1px solid #12617b
+}
+h2{font-size:17px;letter-spacing:2px;margin:0;color:#42e6ff}
+header span{font-size:10px;color:#6be9c9}
+main{height:calc(100dvh - 58px);display:flex;flex-direction:column}
+#scene{width:100%;flex:1;min-height:220px;display:block;background:#06334c}
+.dashboard{
+ display:grid;grid-template-columns:repeat(3,1fr);
+ gap:7px;padding:9px;background:#061725
+}
+.stat{
+ background:#0b293b;border:1px solid #15536a;
+ padding:9px 5px;border-radius:7px;text-align:center
+}
+.stat small{font-size:9px;color:#7caebe;display:block}
+.stat b{font-size:17px;color:#52eaff}
+.bottom{
+ display:grid;grid-template-columns:1fr 1fr;
+ gap:8px;padding:9px;background:#071c2c
+}
+button{
+ background:#0d4058;color:#bdf7ff;border:1px solid #25a8c4;
+ border-radius:8px;padding:12px;font-weight:bold;
+ font-size:12px;touch-action:manipulation
+}
+button:active{background:#1682a0}
+#log{
+ font-size:10px;color:#70d6d7;padding:7px 12px;
+ background:#04121e;min-height:30px
+}
+</style>
+</head>
+<body>
+<header>
+ <h2>OCEAN RESEARCH X</h2>
+ <span>● SYSTEM ONLINE</span>
+</header>
+
+<main>
+ <canvas id="scene"></canvas>
+
+ <section class="dashboard">
+  <div class="stat"><small>DEPTH</small><b id="depth">120 m</b></div>
+  <div class="stat"><small>PRESSURE</small><b id="pressure">13 bar</b></div>
+  <div class="stat"><small>TEMPERATURE</small><b id="temp">18°C</b></div>
+  <div class="stat"><small>OXYGEN</small><b id="oxygen">98%</b></div>
+  <div class="stat"><small>ROV SPEED</small><b id="speed">2.0 m/s</b></div>
+  <div class="stat"><small>SAMPLES</small><b id="samples">00</b></div>
+ </section>
+
+ <div class="bottom">
+  <button onclick="move(-1)">◀ MOVE LEFT</button>
+  <button onclick="move(1)">MOVE RIGHT ▶</button>
+  <button onclick="changeDepth(-20)">▲ DIVE DEEPER</button>
+  <button onclick="changeDepth(20)">▼ ASCEND</button>
+  <button onclick="scan()">◎ SONAR SCAN</button>
+  <button onclick="collect()">⬡ COLLECT SAMPLE</button>
+ </div>
+ <div id="log">MISSION LOG: Ocean research vehicle deployed.</div>
+</main>
+
+<script>
+const canvas=document.getElementById("scene");
+const ctx=canvas.getContext("2d");
+
+let W=0,H=0;
+let subX=0,depth=120,samples=0;
+let scanRadius=0,scanning=false;
+let bubbles=[],fish=[],coral=[];
+let tick=0;
+
+function resize(){
+ const r=canvas.getBoundingClientRect();
+ W=canvas.width=Math.floor(r.width*devicePixelRatio);
+ H=canvas.height=Math.floor(r.height*devicePixelRatio);
+ ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+ W=r.width;H=r.height;
+ if(!subX)subX=W/2;
+}
+window.addEventListener("resize",resize);
+resize();
+
+for(let i=0;i<35;i++){
+ bubbles.push({
+  x:Math.random()*1000,y:Math.random()*700,
+  r:2+Math.random()*4,s:0.5+Math.random()*1.5
+ });
+}
+for(let i=0;i<8;i++){
+ fish.push({
+  x:Math.random()*1000,y:100+Math.random()*300,
+  s:0.5+Math.random()*1.2
+ });
+}
+for(let i=0;i<12;i++){
+ coral.push({
+  x:Math.random()*1000,
+  h:30+Math.random()*65
+ });
+}
+
+function background(){
+ let g=ctx.createLinearGradient(0,0,0,H);
+ g.addColorStop(0,"#08718c");
+ g.addColorStop(.5,"#06405f");
+ g.addColorStop(1,"#031526");
+ ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+
+ // Light rays
+ for(let i=0;i<5;i++){
+  ctx.fillStyle="rgba(94,239,255,.035)";
+  ctx.beginPath();
+  ctx.moveTo(i*W/4,0);
+  ctx.lineTo(i*W/4+45,H);
+  ctx.lineTo(i*W/4+100,H);
+  ctx.lineTo(i*W/4+25,0);
+  ctx.fill();
+ }
+
+ // Sea floor
+ ctx.fillStyle="#102e37";
+ ctx.beginPath();
+ ctx.moveTo(0,H*.86);
+ for(let x=0;x<=W;x+=20){
+  ctx.lineTo(x,H*.86+Math.sin(x*.025+tick*.02)*9);
+ }
+ ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.fill();
+
+ // Coral
+ coral.forEach(c=>{
+  let x=(c.x%W);
+  ctx.strokeStyle="#ff806b";ctx.lineWidth=4;
+  ctx.beginPath();
+  ctx.moveTo(x,H*.88);
+  ctx.lineTo(x,H*.88-c.h);
+  ctx.moveTo(x,H*.88-c.h*.5);
+  ctx.lineTo(x-12,H*.88-c.h*.8);
+  ctx.moveTo(x,H*.88-c.h*.65);
+  ctx.lineTo(x+13,H*.88-c.h);
+  ctx.stroke();
+ });
+}
+
+function drawFish(f){
+ ctx.save();
+ ctx.translate(f.x,f.y);
+ ctx.fillStyle="#ffc76c";
+ ctx.beginPath();
+ ctx.ellipse(0,0,13,6,0,0,Math.PI*2);
+ ctx.fill();
+ ctx.beginPath();
+ ctx.moveTo(-12,0);ctx.lineTo(-21,-7);
+ ctx.lineTo(-21,7);ctx.fill();
+ ctx.fillStyle="#fff";
+ ctx.beginPath();ctx.arc(7,-2,2,0,Math.PI*2);ctx.fill();
+ ctx.restore();
+}
+
+function drawSub(){
+ let x=subX,y=H*.48;
+ ctx.save();
+ ctx.translate(x,y);
+
+ // ROV body
+ ctx.fillStyle="#d5e4e7";
+ ctx.beginPath();
+ ctx.roundRect(-48,-17,96,34,15);
+ ctx.fill();
+
+ // Yellow top
+ ctx.fillStyle="#e9bd42";
+ ctx.fillRect(-28,-23,56,8);
+
+ // Window
+ ctx.fillStyle="#0b3044";
+ ctx.beginPath();ctx.arc(0,0,11,0,Math.PI*2);ctx.fill();
+ ctx.strokeStyle="#57eaff";ctx.lineWidth=3;ctx.stroke();
+
+ // Side lights
+ ctx.fillStyle="#64f8ff";
+ ctx.fillRect(-44,-5,5,5);ctx.fillRect(39,-5,5,5);
+
+ // Propellers
+ ctx.fillStyle="#8caab2";
+ ctx.fillRect(-57,-8,8,16);
+ ctx.fillRect(49,-8,8,16);
+
+ // Robotic arm
+ ctx.strokeStyle="#d3e4e8";ctx.lineWidth=4;
+ ctx.beginPath();ctx.moveTo(25,13);ctx.lineTo(43,29);
+ ctx.lineTo(53,27);ctx.stroke();
+
+ ctx.restore();
+}
+
+function drawSonar(){
+ if(!scanning)return;
+ ctx.strokeStyle="rgba(83,245,255,.65)";
+ ctx.lineWidth=2;
+ ctx.beginPath();
+ ctx.arc(subX,H*.48,scanRadius,0,Math.PI*2);
+ ctx.stroke();
+ scanRadius+=3;
+ if(scanRadius>Math.max(W,H)*.7){
+  scanning=false;scanRadius=0;
+ }
+}
+
+function update(){
+ tick++;
+ ctx.clearRect(0,0,W,H);
+ background();
+
+ fish.forEach(f=>{
+  f.x-=f.s;
+  if(f.x<-30)f.x=W+30;
+  drawFish(f);
+ });
+
+ bubbles.forEach(b=>{
+  b.y-=b.s;
+  b.x+=Math.sin(tick*.02+b.y)*.25;
+  if(b.y<0){b.y=H*.85;b.x=Math.random()*W;}
+  ctx.fillStyle="rgba(185,245,255,.55)";
+  ctx.beginPath();ctx.arc(b.x%W,b.y,b.r,0,Math.PI*2);ctx.fill();
+ });
+
+ drawSonar();
+ drawSub();
+
+ requestAnimationFrame(update);
+}
+update();
+
+function move(direction){
+ subX+=direction*22;
+ subX=Math.max(60,Math.min(W-60,subX));
+ document.getElementById("log").textContent=
+ "MISSION LOG: ROV navigation command executed.";
+}
+
+function changeDepth(amount){
+ depth=Math.max(20,Math.min(900,depth+amount));
+ document.getElementById("depth").textContent=depth+" m";
+ document.getElementById("pressure").textContent=
+ Math.round(1+depth*.1)+" bar";
+ document.getElementById("temp").textContent=
+ Math.max(2,18-depth*.012).toFixed(1)+"°C";
+ document.getElementById("log").textContent=
+ "MISSION LOG: Depth adjusted to "+depth+" metres.";
+}
+
+function scan(){
+ scanning=true;scanRadius=5;
+ document.getElementById("log").textContent=
+ "SONAR: Scanning surrounding underwater environment...";
+}
+
+function collect(){
+ samples++;
+ document.getElementById("samples").textContent=
+ String(samples).padStart(2,"0");
+ document.getElementById("log").textContent=
+ "RESEARCH: Sample "+samples+" collected successfully.";
+}
+</script>
+</body>
+</html>
