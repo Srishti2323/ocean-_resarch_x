@@ -3,282 +3,377 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>OCEAN RESEARCH X</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#041522">
+<title>OCEAN RESEARCH X V2</title>
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;background:#03111e;color:#d9f7ff;
- font-family:Arial,sans-serif;overflow:hidden
-}
-header{
- height:58px;padding:10px 14px;
- display:flex;justify-content:space-between;align-items:center;
- background:#071c2c;border-bottom:1px solid #12617b
-}
-h2{font-size:17px;letter-spacing:2px;margin:0;color:#42e6ff}
-header span{font-size:10px;color:#6be9c9}
-main{height:calc(100dvh - 58px);display:flex;flex-direction:column}
-#scene{width:100%;flex:1;min-height:220px;display:block;background:#06334c}
-.dashboard{
- display:grid;grid-template-columns:repeat(3,1fr);
- gap:7px;padding:9px;background:#061725
-}
-.stat{
- background:#0b293b;border:1px solid #15536a;
- padding:9px 5px;border-radius:7px;text-align:center
-}
-.stat small{font-size:9px;color:#7caebe;display:block}
-.stat b{font-size:17px;color:#52eaff}
-.bottom{
- display:grid;grid-template-columns:1fr 1fr;
- gap:8px;padding:9px;background:#071c2c
-}
-button{
- background:#0d4058;color:#bdf7ff;border:1px solid #25a8c4;
- border-radius:8px;padding:12px;font-weight:bold;
- font-size:12px;touch-action:manipulation
-}
-button:active{background:#1682a0}
-#log{
- font-size:10px;color:#70d6d7;padding:7px 12px;
- background:#04121e;min-height:30px
-}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#03111d;color:#eafaff;font-family:Arial,system-ui}
+#sea{position:fixed;inset:0;width:100%;height:100%}
+.shade{position:fixed;inset:0;pointer-events:none;background:linear-gradient(#020d1bbd,transparent 25%,transparent 75%,#020d1bbb)}
+header{position:fixed;top:0;left:0;right:0;padding:13px 14px;display:flex;justify-content:space-between;background:linear-gradient(#031321,transparent)}
+.brand{font-weight:900;letter-spacing:1.7px;font-size:15px}
+.brand span{color:#5cecff}
+.live{font-size:10px;color:#9bffc9;border:1px solid #68dca877;border-radius:20px;padding:6px 9px}
+.hud{position:fixed;top:58px;left:10px;right:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.metric,.panel{background:#041b2bd9;border:1px solid #56dff544;border-radius:10px;backdrop-filter:blur(8px)}
+.metric{padding:8px 6px}
+.metric small{font-size:9px;color:#8eb9ca;letter-spacing:.8px}
+.metric b{display:block;font-size:15px;margin-top:4px}
+.metric em{font-style:normal;font-size:9px;color:#58eaff}
+.panel{position:fixed;padding:10px}
+.panel h3{margin:0 0 7px;color:#60eaff;font-size:10px;letter-spacing:1.2px}
+.mission{top:137px;left:10px;width:47%;max-width:190px}
+.mission p{font-size:10px;line-height:1.4;margin:0 0 7px;color:#c4e4ef}
+.bar{height:5px;background:#15394a;border-radius:5px;overflow:hidden}
+.bar i{display:block;width:35%;height:100%;background:#5cecff}
+.sonar{top:137px;right:10px;width:119px}
+.sonar canvas{width:96px;height:96px;display:block;margin:auto}
+.log{bottom:94px;left:10px;width:62%;max-width:240px}
+.log div{font-size:9px;color:#abd6e5;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.controls{position:fixed;bottom:12px;left:0;right:0;display:flex;justify-content:center;gap:6px;padding:0 7px}
+button{border:1px solid #58dff577;background:#062b43;color:#eaffff;border-radius:10px;padding:12px 9px;font-size:10px;font-weight:bold;touch-action:none}
+button:active,button.active{background:#087fa5}
+.pad{display:flex;gap:3px}
+.pad button{min-width:35px;font-size:15px;padding:9px 5px}
+.primary{background:#087da4}
+.toast{position:fixed;top:47%;left:50%;transform:translate(-50%,-50%);background:#041c2bf2;border:1px solid #5cecff;border-radius:10px;padding:12px 16px;font-size:11px;opacity:0;transition:.2s;pointer-events:none}
+.toast.show{opacity:1}
+footer{position:fixed;right:10px;bottom:70px;font-size:8px;color:#8db8c5;letter-spacing:.8px}
 </style>
 </head>
 <body>
+
+<canvas id="sea"></canvas>
+<div class="shade"></div>
+
 <header>
- <h2>OCEAN RESEARCH X</h2>
- <span>● SYSTEM ONLINE</span>
+<div class="brand">OCEAN <span>RESEARCH</span> X <span style="font-size:9px">V2.0</span></div>
+<div class="live">● SYSTEM ONLINE</div>
 </header>
 
-<main>
- <canvas id="scene"></canvas>
+<div class="hud">
+<div class="metric"><small>DEPTH</small><b id="depth">120 m</b><em>▼ descent</em></div>
+<div class="metric"><small>PRESSURE</small><b id="pressure">13.1</b><em>bar</em></div>
+<div class="metric"><small>TEMPERATURE</small><b id="temp">8.4°C</b><em>water</em></div>
+<div class="metric"><small>OXYGEN</small><b id="oxy">96%</b><em>reserve</em></div>
+</div>
 
- <section class="dashboard">
-  <div class="stat"><small>DEPTH</small><b id="depth">120 m</b></div>
-  <div class="stat"><small>PRESSURE</small><b id="pressure">13 bar</b></div>
-  <div class="stat"><small>TEMPERATURE</small><b id="temp">18°C</b></div>
-  <div class="stat"><small>OXYGEN</small><b id="oxygen">98%</b></div>
-  <div class="stat"><small>ROV SPEED</small><b id="speed">2.0 m/s</b></div>
-  <div class="stat"><small>SAMPLES</small><b id="samples">00</b></div>
- </section>
+<section class="panel mission">
+<h3>ACTIVE MISSION</h3>
+<p id="mission">Explore the abyssal zone and scan for marine life.</p>
+<div class="bar"><i id="bar"></i></div>
+<p id="pct" style="margin-top:6px;color:#65edff">Mission progress · 35%</p>
+</section>
 
- <div class="bottom">
-  <button onclick="move(-1)">◀ MOVE LEFT</button>
-  <button onclick="move(1)">MOVE RIGHT ▶</button>
-  <button onclick="changeDepth(-20)">▲ DIVE DEEPER</button>
-  <button onclick="changeDepth(20)">▼ ASCEND</button>
-  <button onclick="scan()">◎ SONAR SCAN</button>
-  <button onclick="collect()">⬡ COLLECT SAMPLE</button>
- </div>
- <div id="log">MISSION LOG: Ocean research vehicle deployed.</div>
-</main>
+<section class="panel sonar">
+<h3>LIVE SONAR</h3>
+<canvas id="radar" width="200" height="200"></canvas>
+</section>
+
+<section class="panel log">
+<h3>RESEARCH LOG</h3>
+<div id="l1">ROV systems initialized</div>
+<div id="l2">Entering blue-water zone</div>
+<div id="l3">Awaiting scan command</div>
+</section>
+
+<footer>SIMULATION MODE · NOT REAL SENSOR DATA</footer>
+
+<div class="controls">
+<div class="pad">
+<button id="left">◀</button>
+<button id="up">▲</button>
+<button id="down">▼</button>
+<button id="right">▶</button>
+</div>
+<button class="primary" id="scan">⌕ SCAN</button>
+<button id="sample">＋ SAMPLE</button>
+</div>
+
+<div class="toast" id="toast">SONAR SWEEP COMPLETE</div>
 
 <script>
-const canvas=document.getElementById("scene");
-const ctx=canvas.getContext("2d");
+(()=>{
+const c=document.getElementById('sea');
+const g=c.getContext('2d');
+const r=document.getElementById('radar');
+const q=r.getContext('2d');
 
-let W=0,H=0;
-let subX=0,depth=120,samples=0;
-let scanRadius=0,scanning=false;
-let bubbles=[],fish=[],coral=[];
-let tick=0;
+let w,h,dpr=1,t=0;
+let x=.5,y=.49,dx=0,dy=0;
+let depth=120,pulse=0,angle=0,pct=35,samples=0;
 
-function resize(){
- const r=canvas.getBoundingClientRect();
- W=canvas.width=Math.floor(r.width*devicePixelRatio);
- H=canvas.height=Math.floor(r.height*devicePixelRatio);
- ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
- W=r.width;H=r.height;
- if(!subX)subX=W/2;
+const fish=Array.from({length:18},()=>({
+x:Math.random(),y:.25+Math.random()*.55,
+s:.4+Math.random()*.7,
+dir:Math.random()<.5?-1:1,
+p:Math.random()*7
+}));
+
+const bubbles=Array.from({length:45},()=>({
+x:Math.random(),y:Math.random(),
+s:.15+Math.random()*.5,
+rad:1+Math.random()*2.5
+}));
+
+function size(){
+dpr=Math.min(devicePixelRatio||1,2);
+w=innerWidth;h=innerHeight;
+c.width=w*dpr;c.height=h*dpr;
+g.setTransform(dpr,0,0,dpr,0,0);
 }
-window.addEventListener("resize",resize);
-resize();
+addEventListener('resize',size);
+size();
 
-for(let i=0;i<35;i++){
- bubbles.push({
-  x:Math.random()*1000,y:Math.random()*700,
-  r:2+Math.random()*4,s:0.5+Math.random()*1.5
- });
+function sub(){
+g.save();
+g.translate(x*w,y*h);
+g.rotate(dx*.08);
+g.shadowColor='#54eaff';
+g.shadowBlur=17;
+g.fillStyle='#b9dce2';
+g.strokeStyle='#55eaff';
+g.lineWidth=2;
+g.beginPath();
+g.ellipse(0,0,39,16,0,0,7);
+g.fill();g.stroke();
+
+g.fillStyle='#23495b';
+g.beginPath();
+g.ellipse(8,-2,14,9,0,0,7);
+g.fill();g.stroke();
+
+g.fillStyle='#8df7ff';
+g.beginPath();
+g.arc(9,-3,4,0,7);
+g.fill();
+
+g.fillStyle='#91b9c6';
+g.beginPath();
+g.moveTo(-29,-9);
+g.lineTo(-45,-20);
+g.lineTo(-42,-4);
+g.closePath();g.fill();
+
+g.beginPath();
+g.moveTo(-29,9);
+g.lineTo(-45,20);
+g.lineTo(-42,4);
+g.closePath();g.fill();
+
+g.restore();
 }
+
+function frame(){
+t+=.016;
+g.clearRect(0,0,w,h);
+
+let grad=g.createLinearGradient(0,0,0,h);
+grad.addColorStop(0,'#062b49');
+grad.addColorStop(.5,'#07506b');
+grad.addColorStop(1,'#010d1a');
+g.fillStyle=grad;
+g.fillRect(0,0,w,h);
+
+// Underwater light rays
+g.save();
+g.globalAlpha=.1;
+for(let i=0;i<6;i++){
+g.fillStyle='#a0faff';
+g.beginPath();
+g.moveTo(w*(.08+i*.18),0);
+g.lineTo(w*(.02+i*.18),h*.72);
+g.lineTo(w*(.1+i*.18),h*.72);
+g.fill();
+}
+g.restore();
+
+// Ocean floor
+g.fillStyle='#071b27';
+g.beginPath();
+g.moveTo(0,h*.86);
+for(let i=0;i<=12;i++){
+g.lineTo(i*w/12,h*(.83+.045*Math.sin(i*1.4+t*.15)));
+}
+g.lineTo(w,h);g.lineTo(0,h);g.fill();
+
+// Coral
 for(let i=0;i<8;i++){
- fish.push({
-  x:Math.random()*1000,y:100+Math.random()*300,
-  s:0.5+Math.random()*1.2
- });
+let cx=(i*w/7+w*.04)%w;
+let base=h*(.87+.03*Math.sin(i));
+g.strokeStyle=i%2?'#b65e67':'#d18b66';
+g.lineWidth=3;
+for(let j=0;j<4;j++){
+g.beginPath();
+g.moveTo(cx+j*3,base);
+g.quadraticCurveTo(cx-8+j*7,base-18-j*3,cx-5+j*8,base-31-j*4);
+g.stroke();
 }
-for(let i=0;i<12;i++){
- coral.push({
-  x:Math.random()*1000,
-  h:30+Math.random()*65
- });
-}
-
-function background(){
- let g=ctx.createLinearGradient(0,0,0,H);
- g.addColorStop(0,"#08718c");
- g.addColorStop(.5,"#06405f");
- g.addColorStop(1,"#031526");
- ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-
- // Light rays
- for(let i=0;i<5;i++){
-  ctx.fillStyle="rgba(94,239,255,.035)";
-  ctx.beginPath();
-  ctx.moveTo(i*W/4,0);
-  ctx.lineTo(i*W/4+45,H);
-  ctx.lineTo(i*W/4+100,H);
-  ctx.lineTo(i*W/4+25,0);
-  ctx.fill();
- }
-
- // Sea floor
- ctx.fillStyle="#102e37";
- ctx.beginPath();
- ctx.moveTo(0,H*.86);
- for(let x=0;x<=W;x+=20){
-  ctx.lineTo(x,H*.86+Math.sin(x*.025+tick*.02)*9);
- }
- ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.fill();
-
- // Coral
- coral.forEach(c=>{
-  let x=(c.x%W);
-  ctx.strokeStyle="#ff806b";ctx.lineWidth=4;
-  ctx.beginPath();
-  ctx.moveTo(x,H*.88);
-  ctx.lineTo(x,H*.88-c.h);
-  ctx.moveTo(x,H*.88-c.h*.5);
-  ctx.lineTo(x-12,H*.88-c.h*.8);
-  ctx.moveTo(x,H*.88-c.h*.65);
-  ctx.lineTo(x+13,H*.88-c.h);
-  ctx.stroke();
- });
 }
 
-function drawFish(f){
- ctx.save();
- ctx.translate(f.x,f.y);
- ctx.fillStyle="#ffc76c";
- ctx.beginPath();
- ctx.ellipse(0,0,13,6,0,0,Math.PI*2);
- ctx.fill();
- ctx.beginPath();
- ctx.moveTo(-12,0);ctx.lineTo(-21,-7);
- ctx.lineTo(-21,7);ctx.fill();
- ctx.fillStyle="#fff";
- ctx.beginPath();ctx.arc(7,-2,2,0,Math.PI*2);ctx.fill();
- ctx.restore();
+// Fish animation
+fish.forEach(f=>{
+f.x+=f.dir*f.s*.0008;
+if(f.x<-.08)f.x=1.08;
+if(f.x>1.08)f.x=-.08;
+let fx=f.x*w;
+let fy=f.y*h+Math.sin(t*2+f.p)*5;
+g.fillStyle='#b5edf0bb';
+g.beginPath();
+g.ellipse(fx,fy,7*f.s,3*f.s,0,0,7);
+g.fill();
+g.beginPath();
+g.moveTo(fx-f.dir*7*f.s,fy);
+g.lineTo(fx-f.dir*12*f.s,fy-4*f.s);
+g.lineTo(fx-f.dir*12*f.s,fy+4*f.s);
+g.fill();
+});
+
+// Bubbles
+bubbles.forEach(b=>{
+b.y-=b.s*.0015;
+if(b.y<-.03){b.y=1.03;b.x=Math.random();}
+g.strokeStyle='#a6f1ff77';
+g.beginPath();
+g.arc(b.x*w,b.y*h,b.rad,0,7);
+g.stroke();
+});
+
+sub();
+
+// Sonar scan wave
+if(pulse>0){
+g.strokeStyle='#5befff88';
+g.lineWidth=2;
+g.beginPath();
+g.arc(x*w,y*h,(1-pulse)*Math.max(w,h)*.55,0,7);
+g.stroke();
+pulse-=.012;
 }
 
-function drawSub(){
- let x=subX,y=H*.48;
- ctx.save();
- ctx.translate(x,y);
-
- // ROV body
- ctx.fillStyle="#d5e4e7";
- ctx.beginPath();
- ctx.roundRect(-48,-17,96,34,15);
- ctx.fill();
-
- // Yellow top
- ctx.fillStyle="#e9bd42";
- ctx.fillRect(-28,-23,56,8);
-
- // Window
- ctx.fillStyle="#0b3044";
- ctx.beginPath();ctx.arc(0,0,11,0,Math.PI*2);ctx.fill();
- ctx.strokeStyle="#57eaff";ctx.lineWidth=3;ctx.stroke();
-
- // Side lights
- ctx.fillStyle="#64f8ff";
- ctx.fillRect(-44,-5,5,5);ctx.fillRect(39,-5,5,5);
-
- // Propellers
- ctx.fillStyle="#8caab2";
- ctx.fillRect(-57,-8,8,16);
- ctx.fillRect(49,-8,8,16);
-
- // Robotic arm
- ctx.strokeStyle="#d3e4e8";ctx.lineWidth=4;
- ctx.beginPath();ctx.moveTo(25,13);ctx.lineTo(43,29);
- ctx.lineTo(53,27);ctx.stroke();
-
- ctx.restore();
+requestAnimationFrame(frame);
 }
 
-function drawSonar(){
- if(!scanning)return;
- ctx.strokeStyle="rgba(83,245,255,.65)";
- ctx.lineWidth=2;
- ctx.beginPath();
- ctx.arc(subX,H*.48,scanRadius,0,Math.PI*2);
- ctx.stroke();
- scanRadius+=3;
- if(scanRadius>Math.max(W,H)*.7){
-  scanning=false;scanRadius=0;
- }
+function radar(){
+q.clearRect(0,0,200,200);
+q.fillStyle='#00233088';
+q.fillRect(0,0,200,200);
+q.strokeStyle='#4de5ff66';
+
+for(let i=1;i<=3;i++){
+q.beginPath();
+q.arc(100,100,i*30,0,Math.PI*2);
+q.stroke();
+}
+
+q.beginPath();
+q.moveTo(2,100);q.lineTo(198,100);
+q.moveTo(100,2);q.lineTo(100,198);
+q.stroke();
+
+angle+=.035;
+let a=q.createRadialGradient(100,100,0,100,100,90);
+a.addColorStop(0,'#50ffdc55');
+a.addColorStop(1,'#50ffdc00');
+q.fillStyle=a;
+q.beginPath();
+q.moveTo(100,100);
+q.arc(100,100,90,angle-.5,angle);
+q.closePath();q.fill();
+
+for(let i=0;i<8;i++){
+let z=i*2.4+1;
+let rr=18+(i*31)%72;
+q.fillStyle='#69ffcc';
+q.beginPath();
+q.arc(100+Math.cos(z)*rr,100+Math.sin(z)*rr,2.5,0,7);
+q.fill();
+}
+
+q.fillStyle='#65f7ff';
+q.beginPath();q.arc(100,100,4,0,7);q.fill();
+requestAnimationFrame(radar);
 }
 
 function update(){
- tick++;
- ctx.clearRect(0,0,W,H);
- background();
+x=Math.max(.12,Math.min(.88,x+dx*.003));
+y=Math.max(.29,Math.min(.79,y+dy*.003));
+depth=Math.max(20,Math.min(900,depth+dy*.16));
 
- fish.forEach(f=>{
-  f.x-=f.s;
-  if(f.x<-30)f.x=W+30;
-  drawFish(f);
- });
+document.getElementById('depth').textContent=Math.round(depth)+' m';
+document.getElementById('pressure').textContent=(1+depth*.1013).toFixed(1);
+document.getElementById('temp').textContent=(18-depth*.055).toFixed(1)+'°C';
+document.getElementById('oxy').textContent=Math.max(62,96-Math.floor(t/120))+'%';
 
- bubbles.forEach(b=>{
-  b.y-=b.s;
-  b.x+=Math.sin(tick*.02+b.y)*.25;
-  if(b.y<0){b.y=H*.85;b.x=Math.random()*W;}
-  ctx.fillStyle="rgba(185,245,255,.55)";
-  ctx.beginPath();ctx.arc(b.x%W,b.y,b.r,0,Math.PI*2);ctx.fill();
- });
-
- drawSonar();
- drawSub();
-
- requestAnimationFrame(update);
+requestAnimationFrame(update);
 }
+
+function log(s){
+let a=document.getElementById('l1');
+let b=document.getElementById('l2');
+let c=document.getElementById('l3');
+c.textContent=b.textContent;
+b.textContent=a.textContent;
+a.textContent=new Date().toLocaleTimeString([],{
+hour:'2-digit',minute:'2-digit'
+})+' · '+s;
+}
+
+function msg(s){
+let e=document.getElementById('toast');
+e.textContent=s;
+e.classList.add('show');
+setTimeout(()=>e.classList.remove('show'),1300);
+}
+
+function advance(n){
+pct=Math.min(100,pct+n);
+document.getElementById('bar').style.width=pct+'%';
+document.getElementById('pct').textContent='Mission progress · '+pct+'%';
+}
+
+document.getElementById('scan').onclick=()=>{
+pulse=1;
+advance(12);
+log('Sonar sweep complete · targets detected');
+msg('SONAR SWEEP COMPLETE');
+};
+
+document.getElementById('sample').onclick=()=>{
+samples++;
+advance(5);
+log('Marine water sample '+samples+' secured');
+msg('SAMPLE '+samples+' SECURED');
+};
+
+function hold(id,a,b){
+let e=document.getElementById(id);
+let start=v=>{
+v.preventDefault();
+dx=a;dy=b;
+e.classList.add('active');
+};
+let end=()=>{
+dx=0;dy=0;
+e.classList.remove('active');
+};
+e.addEventListener('pointerdown',start);
+['pointerup','pointercancel','pointerleave'].forEach(k=>{
+e.addEventListener(k,end);
+});
+}
+
+hold('left',-1,0);
+hold('right',1,0);
+hold('up',0,-1);
+hold('down',0,1);
+
+frame();
+radar();
 update();
-
-function move(direction){
- subX+=direction*22;
- subX=Math.max(60,Math.min(W-60,subX));
- document.getElementById("log").textContent=
- "MISSION LOG: ROV navigation command executed.";
-}
-
-function changeDepth(amount){
- depth=Math.max(20,Math.min(900,depth+amount));
- document.getElementById("depth").textContent=depth+" m";
- document.getElementById("pressure").textContent=
- Math.round(1+depth*.1)+" bar";
- document.getElementById("temp").textContent=
- Math.max(2,18-depth*.012).toFixed(1)+"°C";
- document.getElementById("log").textContent=
- "MISSION LOG: Depth adjusted to "+depth+" metres.";
-}
-
-function scan(){
- scanning=true;scanRadius=5;
- document.getElementById("log").textContent=
- "SONAR: Scanning surrounding underwater environment...";
-}
-
-function collect(){
- samples++;
- document.getElementById("samples").textContent=
- String(samples).padStart(2,"0");
- document.getElementById("log").textContent=
- "RESEARCH: Sample "+samples+" collected successfully.";
-}
+})();
 </script>
 </body>
 </html>
+
